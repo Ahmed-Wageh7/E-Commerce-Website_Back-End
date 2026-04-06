@@ -14,10 +14,6 @@ import ticketController from "./modules/tickets/tickets.controller.js";
 
 const appRouter = express.Router();
 
-appRouter.get("/health", (req, res) => {
-  res.status(200).json({ message: "Server is running" });
-});
-
 appRouter.use("/auth", authController);
 appRouter.use("/users", userController);
 appRouter.use("/categories", categoryController);
