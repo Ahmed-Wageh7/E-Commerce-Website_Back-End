@@ -1,35 +1,30 @@
+import express from "express";
+
+import { auth } from "../../middleware/auth.js";
+import validate from "../../middleware/validate.js";
+import imageUpload from "../../middleware/multer.js";
 import asyncHandler from "../../utils/async-handler.js";
+import usersService from "./users.service.js";
+import { updateProfileSchema } from "./users.validation.js";
 
-const getProfile = asyncHandler(async (req, res) => {
-  res.status(200).json({ user: req.user });
-});
+const router = express.Router();
 
-const updateProfile = asyncHandler(async (req, res) => {
-  if (req.body.name !== undefined) req.user.name = req.body.name;
-  if (req.body.phone !== undefined) req.user.phone = req.body.phone;
-  await req.user.save();
+router.use(auth);
 
-  res.status(200).json({ message: "Profile updated", user: req.user });
-});
+router.get("/profile", asyncHandler(async (req, res) => {
+  res.status(200).json(await usersService.getProfile(req.user));
+}));
 
-const uploadAvatar = asyncHandler(async (req, res) => {
-  req.user.avatar = req.file ? `/uploads/${req.file.filename}` : req.user.avatar;
-  await req.user.save();
+router.put("/profile", validate(updateProfileSchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await usersService.updateProfile(req.user, req.body));
+}));
 
-  res.status(200).json({ message: "Avatar uploaded", avatar: req.user.avatar });
-});
+router.delete("/profile", asyncHandler(async (req, res) => {
+  res.status(200).json(await usersService.deleteProfile(req.user));
+}));
 
-const deleteProfile = asyncHandler(async (req, res) => {
-  req.user.isDeleted = true;
-  req.user.deletedAt = new Date();
-  await req.user.save();
+router.post("/upload-avatar", imageUpload.single("avatar"), asyncHandler(async (req, res) => {
+  res.status(200).json(await usersService.uploadAvatar(req.user, req.file));
+}));
 
-  res.status(200).json({ message: "Account soft deleted successfully" });
-});
-
-export default {
-  getProfile,
-  updateProfile,
-  uploadAvatar,
-  deleteProfile
-};
+export default router;

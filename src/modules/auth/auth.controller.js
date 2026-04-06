@@ -1,41 +1,43 @@
+import express from "express";
+import rateLimit from "express-rate-limit";
+
+import validate from "../../middleware/validate.js";
 import asyncHandler from "../../utils/async-handler.js";
 import authService from "./auth.service.js";
+import { signupSchema, loginSchema, emailSchema, resetPasswordSchema } from "./auth.validation.js";
 
-const signup = asyncHandler(async (req, res) => {
-  const result = await authService.signup(req.body);
-  res.status(201).json(result);
+const router = express.Router();
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: "Too many auth requests, please try again later",
 });
 
-const verifyEmail = asyncHandler(async (req, res) => {
-  const result = await authService.verifyEmail(req.params.token);
-  res.status(200).json(result);
-});
+router.use(authLimiter);
 
-const resendVerification = asyncHandler(async (req, res) => {
-  const result = await authService.resendVerification(req.body.email);
-  res.status(200).json(result);
-});
+router.post("/signup", validate(signupSchema), asyncHandler(async (req, res) => {
+  res.status(201).json(await authService.signup(req.body));
+}));
 
-const login = asyncHandler(async (req, res) => {
-  const result = await authService.login(req.body);
-  res.status(200).json(result);
-});
+router.post("/login", validate(loginSchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await authService.login(req.body));
+}));
 
-const forgotPassword = asyncHandler(async (req, res) => {
-  const result = await authService.forgotPassword(req.body.email);
-  res.status(200).json(result);
-});
+router.get("/verify-email/:token", asyncHandler(async (req, res) => {
+  res.status(200).json(await authService.verifyEmail(req.params.token));
+}));
 
-const resetPassword = asyncHandler(async (req, res) => {
-  const result = await authService.resetPassword(req.params.token, req.body.password);
-  res.status(200).json(result);
-});
+router.post("/resend-verification", validate(emailSchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await authService.resendVerification(req.body.email));
+}));
 
-export default {
-  signup,
-  verifyEmail,
-  resendVerification,
-  login,
-  forgotPassword,
-  resetPassword
-};
+router.post("/forgot-password", validate(emailSchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await authService.forgotPassword(req.body.email));
+}));
+
+router.post("/reset-password/:token", validate(resetPasswordSchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await authService.resetPassword(req.params.token, req.body.password));
+}));
+
+export default router;

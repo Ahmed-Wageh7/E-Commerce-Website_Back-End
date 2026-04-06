@@ -1,16 +1,16 @@
 import express from "express";
 
-import authRoutes from "./modules/auth/auth.routes.js";
-import userRoutes from "./modules/users/users.routes.js";
-import categoryRoutes from "./modules/categories/categories.routes.js";
-import subcategoryRoutes from "./modules/subcategories/subcategories.routes.js";
-import productRoutes from "./modules/products/products.routes.js";
-import cartRoutes from "./modules/cart/cart.routes.js";
-import orderRoutes from "./modules/orders/orders.routes.js";
-import staffRoutes from "./modules/staff/staff.routes.js";
-import attendanceRoutes from "./modules/attendance/attendance.routes.js";
-import deductionRoutes from "./modules/deductions/deductions.routes.js";
-import ticketRoutes from "./modules/tickets/tickets.routes.js";
+import authController from "./modules/auth/auth.controller.js";
+import userController from "./modules/users/users.controller.js";
+import categoryController from "./modules/categories/categories.controller.js";
+import subcategoryController from "./modules/subcategories/subcategories.controller.js";
+import productController from "./modules/products/products.controller.js";
+import cartController from "./modules/cart/cart.controller.js";
+import orderController from "./modules/orders/orders.controller.js";
+import staffController from "./modules/staff/staff.controller.js";
+import attendanceController from "./modules/attendance/attendance.controller.js";
+import deductionController from "./modules/deductions/deductions.controller.js";
+import ticketController from "./modules/tickets/tickets.controller.js";
 
 const appRouter = express.Router();
 
@@ -18,16 +18,16 @@ appRouter.get("/health", (req, res) => {
   res.status(200).json({ message: "Server is running" });
 });
 
-appRouter.use("/auth", authRoutes);
-appRouter.use("/users", userRoutes);
-appRouter.use("/categories", categoryRoutes);
-appRouter.use("/subcategories", subcategoryRoutes);
-appRouter.use("/", productRoutes);
-appRouter.use("/cart", cartRoutes);
-appRouter.use("/", orderRoutes);
-appRouter.use("/", staffRoutes);
-appRouter.use("/", attendanceRoutes);
-appRouter.use("/", deductionRoutes);
-appRouter.use("/", ticketRoutes);
+appRouter.use("/auth", authController);
+appRouter.use("/users", userController);
+appRouter.use("/categories", categoryController);
+appRouter.use("/subcategories", subcategoryController);
+appRouter.use("/", productController);
+appRouter.use("/cart", cartController);
+appRouter.use("/", orderController);
+appRouter.use("/", staffController);
+appRouter.use("/", attendanceController);
+appRouter.use("/", deductionController);
+appRouter.use("/", ticketController);
 
 export default appRouter;

@@ -1,47 +1,45 @@
-import Deduction from "../../database/model/deduction.model.js";
-import Staff from "../../database/model/staff.model.js";
-import AppError from "../../utils/app-error.js";
+import express from "express";
+
+import { auth, authorize } from "../../middleware/auth.js";
+import validate from "../../middleware/validate.js";
+import validateObjectIdParam from "../../middleware/validate-object-id.js";
 import asyncHandler from "../../utils/async-handler.js";
+import deductionsService from "./deductions.service.js";
+import { deductionSchema } from "./deductions.validation.js";
 
-const ensureStaff = async (staffId) => {
-  const staff = await Staff.findOne({ _id: staffId, isDeleted: false });
-  if (!staff) throw new AppError("Staff member not found", 404);
-};
+const router = express.Router();
 
-const addDeduction = asyncHandler(async (req, res) => {
-  await ensureStaff(req.params.id);
-  const deduction = await Deduction.create({ ...req.body, staff: req.params.id });
-  res.status(201).json({ message: "Deduction added", deduction });
-});
+router.post(
+  "/admin/staff/:id/deductions",
+  auth,
+  authorize("admin"),
+  validateObjectIdParam("id"),
+  validate(deductionSchema),
+  asyncHandler(async (req, res) => {
+    res.status(201).json(await deductionsService.addDeduction(req.params.id, req.body));
+  })
+);
+router.get("/admin/staff/:id/deductions", auth, authorize("admin"), validateObjectIdParam("id"), asyncHandler(async (req, res) => {
+  res.status(200).json(await deductionsService.getDeductions(req.params.id));
+}));
+router.put(
+  "/admin/staff/:id/deductions/:deductionId",
+  auth,
+  authorize("admin"),
+  validateObjectIdParam("id", "deductionId"),
+  validate(deductionSchema),
+  asyncHandler(async (req, res) => {
+    res.status(200).json(await deductionsService.updateDeduction(req.params.id, req.params.deductionId, req.body));
+  })
+);
+router.delete(
+  "/admin/staff/:id/deductions/:deductionId",
+  auth,
+  authorize("admin"),
+  validateObjectIdParam("id", "deductionId"),
+  asyncHandler(async (req, res) => {
+    res.status(200).json(await deductionsService.deleteDeduction(req.params.id, req.params.deductionId));
+  })
+);
 
-const getDeductions = asyncHandler(async (req, res) => {
-  await ensureStaff(req.params.id);
-  const deductions = await Deduction.find({ staff: req.params.id });
-  res.status(200).json({ deductions });
-});
-
-const updateDeduction = asyncHandler(async (req, res) => {
-  const deduction = await Deduction.findOneAndUpdate(
-    { _id: req.params.deductionId, staff: req.params.id },
-    req.body,
-    { new: true }
-  );
-  if (!deduction) throw new AppError("Deduction not found", 404);
-  res.status(200).json({ message: "Deduction updated", deduction });
-});
-
-const deleteDeduction = asyncHandler(async (req, res) => {
-  const deduction = await Deduction.findOneAndDelete({
-    _id: req.params.deductionId,
-    staff: req.params.id
-  });
-  if (!deduction) throw new AppError("Deduction not found", 404);
-  res.status(200).json({ message: "Deduction removed" });
-});
-
-export default {
-  addDeduction,
-  getDeductions,
-  updateDeduction,
-  deleteDeduction
-};
+export default router;

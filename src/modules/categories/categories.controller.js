@@ -1,65 +1,32 @@
-import Category from "../../database/model/category.model.js";
-import Subcategory from "../../database/model/subcategory.model.js";
-import AppError from "../../utils/app-error.js";
+import express from "express";
+
+import { auth, authorize } from "../../middleware/auth.js";
+import validate from "../../middleware/validate.js";
+import validateObjectIdParam from "../../middleware/validate-object-id.js";
 import asyncHandler from "../../utils/async-handler.js";
+import categoriesService from "./categories.service.js";
+import { categorySchema } from "./categories.validation.js";
 
-const createCategory = asyncHandler(async (req, res) => {
-  const category = await Category.create(req.body);
-  res.status(201).json({ message: "Category created", category });
-});
+const router = express.Router();
 
-const updateCategory = asyncHandler(async (req, res) => {
-  const category = await Category.findOneAndUpdate(
-    { _id: req.params.id, isDeleted: false },
-    req.body,
-    { new: true }
-  );
-  if (!category) throw new AppError("Category not found", 404);
-  res.status(200).json({ message: "Category updated", category });
-});
+router.get("/", asyncHandler(async (req, res) => {
+  res.status(200).json(await categoriesService.getAllCategories());
+}));
 
-const deleteCategory = asyncHandler(async (req, res) => {
-  const category = await Category.findOne({ _id: req.params.id, isDeleted: false });
-  if (!category) throw new AppError("Category not found", 404);
+router.get("/:id/subcategories", validateObjectIdParam("id"), asyncHandler(async (req, res) => {
+  res.status(200).json(await categoriesService.getCategorySubcategories(req.params.id));
+}));
 
-  category.isDeleted = true;
-  category.deletedAt = new Date();
-  await category.save();
+router.post("/", auth, authorize("admin"), validate(categorySchema), asyncHandler(async (req, res) => {
+  res.status(201).json(await categoriesService.createCategory(req.body));
+}));
 
-  res.status(200).json({ message: "Category soft deleted" });
-});
+router.put("/:id", auth, authorize("admin"), validateObjectIdParam("id"), validate(categorySchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await categoriesService.updateCategory(req.params.id, req.body));
+}));
 
-const getAllCategories = asyncHandler(async (req, res) => {
-  const categories = await Category.find({ isDeleted: false }).lean();
-  const categoryIds = categories.map((category) => category._id);
-  const subcategories = await Subcategory.find({
-    category: { $in: categoryIds },
-    isDeleted: false
-  }).lean();
+router.delete("/:id", auth, authorize("admin"), validateObjectIdParam("id"), asyncHandler(async (req, res) => {
+  res.status(200).json(await categoriesService.deleteCategory(req.params.id));
+}));
 
-  const response = categories.map((category) => ({
-    ...category,
-    subcategories: subcategories.filter(
-      (subcategory) => String(subcategory.category) === String(category._id)
-    )
-  }));
-
-  res.status(200).json({ categories: response });
-});
-
-const getCategorySubcategories = asyncHandler(async (req, res) => {
-  const subcategories = await Subcategory.find({
-    category: req.params.id,
-    isDeleted: false
-  });
-
-  res.status(200).json({ subcategories });
-});
-
-export default {
-  createCategory,
-  updateCategory,
-  deleteCategory,
-  getAllCategories,
-  getCategorySubcategories
-};
+export default router;

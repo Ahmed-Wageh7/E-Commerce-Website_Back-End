@@ -1,59 +1,39 @@
-import Ticket from "../../database/model/ticket.model.js";
-import AppError from "../../utils/app-error.js";
+import express from "express";
+
+import { auth, authorize } from "../../middleware/auth.js";
+import validate from "../../middleware/validate.js";
+import validateObjectIdParam from "../../middleware/validate-object-id.js";
 import asyncHandler from "../../utils/async-handler.js";
+import ticketsService from "./tickets.service.js";
+import { createTicketSchema, replySchema, updateStatusSchema } from "./tickets.validation.js";
 
-const createTicket = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.create({
-    ...req.body,
-    user: req.user._id
-  });
+const router = express.Router();
 
-  res.status(201).json({ message: "Ticket created", ticket });
-});
+router.post("/tickets", auth, validate(createTicketSchema), asyncHandler(async (req, res) => {
+  res.status(201).json(await ticketsService.createTicket(req.body, req.user._id));
+}));
 
-const getMyTickets = asyncHandler(async (req, res) => {
-  const tickets = await Ticket.find({ user: req.user._id });
-  res.status(200).json({ tickets });
-});
+router.get("/tickets", auth, asyncHandler(async (req, res) => {
+  res.status(200).json(await ticketsService.getMyTickets(req.user._id));
+}));
 
-const getTicketDetails = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findOne({ _id: req.params.id, user: req.user._id });
-  if (!ticket) throw new AppError("Ticket not found", 404);
-  res.status(200).json({ ticket });
-});
+router.get("/tickets/:id", auth, validateObjectIdParam("id"), asyncHandler(async (req, res) => {
+  res.status(200).json(await ticketsService.getTicketDetails(req.params.id, req.user._id));
+}));
 
-const addReply = asyncHandler(async (req, res) => {
-  const filter =
-    req.user.role === "admin"
-      ? { _id: req.params.id }
-      : { _id: req.params.id, user: req.user._id };
-  const ticket = await Ticket.findOne(filter);
-  if (!ticket) throw new AppError("Ticket not found", 404);
+router.post("/tickets/:id/reply", auth, validateObjectIdParam("id"), validate(replySchema), asyncHandler(async (req, res) => {
+  res.status(200).json(await ticketsService.addReply(req.params.id, req.user, req.body.message));
+}));
 
-  ticket.replies.push({
-    sender: req.user._id,
-    message: req.body.message,
-    isAdmin: req.user.role === "admin"
-  });
+router.patch(
+  "/admin/tickets/:id/status",
+  auth,
+  authorize("admin"),
+  validateObjectIdParam("id"),
+  validate(updateStatusSchema),
+  asyncHandler(async (req, res) => {
+    res.status(200).json(await ticketsService.updateStatus(req.params.id, req.body.status));
+  })
+);
 
-  await ticket.save();
-  res.status(200).json({ message: "Reply added", ticket });
-});
-
-const updateStatus = asyncHandler(async (req, res) => {
-  const ticket = await Ticket.findByIdAndUpdate(
-    req.params.id,
-    { status: req.body.status },
-    { new: true }
-  );
-  if (!ticket) throw new AppError("Ticket not found", 404);
-  res.status(200).json({ message: "Ticket status updated", ticket });
-});
-
-export default {
-  createTicket,
-  getMyTickets,
-  getTicketDetails,
-  addReply,
-  updateStatus
-};
+export default router;
