@@ -1,0 +1,10 @@
+node_modules
+.env
+config/.env
+uploads
+uploads/*
+coverage
+npm-debug.log*
+.DS_Store
+cypress/videos
+cypress/screenshots
