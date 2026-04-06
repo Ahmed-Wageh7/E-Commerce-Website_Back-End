@@ -59,13 +59,10 @@ Core variables:
 - `SMTP_USER`
 - `SMTP_PASS`
 
-Optional Stripe and media variables:
+Optional Stripe variables:
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
 
 ## Base URL
 

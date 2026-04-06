@@ -15,10 +15,7 @@ const env = {
   smtpPass: process.env.SMTP_PASS || "",
   appBaseUrl: process.env.APP_BASE_URL || "http://localhost:5000",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY || "",
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
-  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME || "",
-  cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || "",
-  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || ""
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || ""
 };
 
 export default env;
